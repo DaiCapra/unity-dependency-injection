@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace DependencyInjection.Runtime
 {
@@ -19,49 +20,21 @@ namespace DependencyInjection.Runtime
 
         public T Get<T>() where T : class
         {
-            var instance = GetInstance<T>();
+            var instance = (T) GetInstance(typeof(T));
             return instance;
         }
 
 
-        private T GetInstance<T>() where T : class
+        private object GetInstance(Type type)
         {
-            var type = typeof(T);
-            if (!_map.ContainsKey(type))
+            if (!AutoResolveType(type))
             {
-                if (!AutoResolve)
-                {
-                    Debug.LogError($"Type {type.Name} is not registered");
-                    return default;
-                }
-                else
-                {
-                    Register<T>();
-                }
+                return default;
             }
 
             if (!_map.TryGetValue(type, out var instance))
             {
                 Debug.LogError($"Could not get type {type.Name}");
-                return default;
-            }
-
-            var t = (T) instance;
-            if (t == null)
-            {
-                return default;
-            }
-
-            InjectFields(t);
-            InjectProperties(t);
-            return t;
-        }
-
-        private object GetInstance(Type type)
-        {
-            if (!_map.TryGetValue(type, out var instance))
-            {
-                Debug.LogError($"Type {type.Name} is not registered");
                 return default;
             }
 
@@ -76,16 +49,37 @@ namespace DependencyInjection.Runtime
             return t;
         }
 
-        public void Register<T>() where T : class
+        private bool AutoResolveType(Type type)
         {
-            var instance = CreateInstance<T>();
-            var type = typeof(T);
+            if (!_map.ContainsKey(type))
+            {
+                if (!AutoResolve)
+                {
+                    Debug.LogError($"Type {type.Name} is not registered");
+                    return false;
+                }
+
+                Register(type);
+            }
+
+            return true;
+        }
+
+
+        public void Register(Type type)
+        {
+            var instance = CreateInstance(type);
             RegisterInstance(type, instance);
         }
 
-        private static T CreateInstance<T>() where T : class
+        public void Register<T>()
         {
-            return (T) Activator.CreateInstance(typeof(T));
+            Register(typeof(T));
+        }
+
+        private object CreateInstance(Type type)
+        {
+            return Activator.CreateInstance(type);
         }
 
         public void Register<I, T>() where T : class
@@ -97,7 +91,7 @@ namespace DependencyInjection.Runtime
                 return;
             }
 
-            var instance = CreateInstance<T>();
+            var instance = CreateInstance(typeof(T));
             RegisterInstance(type, instance);
         }
 
@@ -126,7 +120,6 @@ namespace DependencyInjection.Runtime
 
                 var targetType = info.FieldType;
                 var instance = GetInstance(targetType);
-
                 info.SetValue(obj, instance);
             }
         }
@@ -147,12 +140,7 @@ namespace DependencyInjection.Runtime
                 }
 
                 var targetType = info.PropertyType;
-                if (!_map.TryGetValue(targetType, out var instance))
-                {
-                    Debug.LogError($"Could not set value: {targetType.Name} in type: {type.Name}");
-                    continue;
-                }
-
+                var instance = GetInstance(targetType);
                 info.SetValue(obj, instance);
             }
         }
