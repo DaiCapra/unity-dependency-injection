@@ -117,7 +117,7 @@ namespace DependencyInjection.Runtime
             return true;
         }
 
-        private object CreateInstance(Type type)
+        protected virtual object CreateInstance(Type type)
         {
             return Activator.CreateInstance(type);
         }
