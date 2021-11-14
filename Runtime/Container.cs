@@ -22,8 +22,13 @@ namespace DependencyInjection.Runtime
 
         public T Get<T>() where T : class
         {
-            var instance = (T) GetInstance(typeof(T));
-            return instance;
+            var obj = GetInstance(typeof(T));
+            if (obj is T t)
+            {
+                return t;
+            }
+
+            return default;
         }
 
 
@@ -43,7 +48,7 @@ namespace DependencyInjection.Runtime
             var type = typeof(I);
             if (!type.IsInterface)
             {
-                Debug.LogError($"Generic type I is not an interface!");
+                Debug.LogWarning($"Generic type I is not an interface!");
                 return;
             }
 
@@ -64,14 +69,14 @@ namespace DependencyInjection.Runtime
                 var instance = kv.Value;
                 if (instance == null)
                 {
-                    Debug.LogError($"Instance null for type: {type.Name}!");
+                    Debug.LogWarning($"Instance null for type: {type.Name}!");
                     return false;
                 }
 
                 var obj = GetInstance(type);
                 if (obj == null)
                 {
-                    Debug.LogError($"Could not create instance for type: {type.Name}!");
+                    Debug.LogWarning($"Could not create instance for type: {type.Name}!");
                     return false;
                 }
 
@@ -81,7 +86,7 @@ namespace DependencyInjection.Runtime
                     var value = property.GetValue(obj);
                     if (value == null)
                     {
-                        Debug.LogError($"Could not set property: {property.Name}, type: {type.Name}!");
+                        Debug.LogWarning($"Could not set property: {property.Name}, type: {type.Name}!");
                         return false;
                     }
                 }
@@ -92,7 +97,7 @@ namespace DependencyInjection.Runtime
                     var value = field.GetValue(obj);
                     if (value == null)
                     {
-                        Debug.LogError($"Could not set field: {field.Name}, type: {type.Name}!");
+                        Debug.LogWarning($"Could not set field: {field.Name}, type: {type.Name}!");
                         return false;
                     }
                 }
@@ -107,7 +112,7 @@ namespace DependencyInjection.Runtime
             {
                 if (!AutoResolve)
                 {
-                    Debug.LogError($"Type {type.Name} is not registered");
+                    Debug.LogWarning($"Type {type.Name} is not registered");
                     return false;
                 }
 
@@ -119,7 +124,14 @@ namespace DependencyInjection.Runtime
 
         protected virtual object CreateInstance(Type type)
         {
-            return Activator.CreateInstance(type);
+            try
+            {
+                return Activator.CreateInstance(type);
+            }
+            catch
+            {
+                return null;
+            }
         }
 
         private IEnumerable<FieldInfo> GetFields(Type type)
@@ -139,7 +151,7 @@ namespace DependencyInjection.Runtime
 
             if (!_map.TryGetValue(type, out var instance))
             {
-                Debug.LogError($"Could not get type {type.Name}");
+                Debug.LogWarning($"Could not get type {type.Name}");
                 return default;
             }
 
@@ -193,7 +205,7 @@ namespace DependencyInjection.Runtime
             bool didAdd = _map.TryAdd(type, obj);
             if (!didAdd)
             {
-                Debug.LogError($"Could not register type {type.Name}");
+                Debug.LogWarning($"Could not register type {type.Name}");
             }
         }
     }

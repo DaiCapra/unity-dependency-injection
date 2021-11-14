@@ -40,6 +40,20 @@ namespace DependencyInjection.Tests.Editor
         }
 
         [Test]
+        public void TestInvalid()
+        {
+            var container = new Container
+            {
+                AutoResolve = false
+            };
+            
+            // invalid cast, different namespaces
+            container.Register<ILogger, Logger>();
+            var obj = container.Get<Castle.Core.Logging.ILogger>();
+            Assert.Null(obj);
+        }
+
+        [Test]
         public void TestInjectionNested()
         {
             var container = new Container();
@@ -54,6 +68,19 @@ namespace DependencyInjection.Tests.Editor
             Assert.NotNull(obj.Charlie);
             Assert.NotNull(obj.Charlie.Alice);
             Assert.NotNull(obj.Charlie.Bob);
+        }
+
+        [Test]
+        public void TestInjectionInterface()
+        {
+            var container = new Container();
+            container.Register<ITestAlice, TestAlice>();
+            container.Register<TestEric>();
+
+            var obj = container.Get<TestEric>();
+
+            Assert.NotNull(obj);
+            Assert.NotNull(obj.Alice);
         }
 
         [Test]
