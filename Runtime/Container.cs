@@ -161,9 +161,14 @@ namespace DependencyInjection.Runtime
                 return default;
             }
 
+            InjectDependencies(t);
+            return t;
+        }
+
+        public void InjectDependencies(object t)
+        {
             InjectFields(t);
             InjectProperties(t);
-            return t;
         }
 
         private IEnumerable<PropertyInfo> GetProperties(Type type)
