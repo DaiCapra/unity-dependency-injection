@@ -148,7 +148,7 @@ namespace DependencyInjection.Runtime
 
         private IEnumerable<FieldInfo> GetFields(Type type)
         {
-            if (type == null)
+            if (type?.BaseType == null)
             {
                 return new List<FieldInfo>();
             }
@@ -157,7 +157,6 @@ namespace DependencyInjection.Runtime
                 .Concat(type.BaseType.GetFields(_bindingFlags))
                 .Where(t => t.GetCustomAttributes(typeof(InjectAttribute), true).Length > 0);
         }
-
 
         private object GetInstance(Type type)
         {
@@ -179,7 +178,7 @@ namespace DependencyInjection.Runtime
             }
 
             InjectDependencies(t);
-            
+
             if (t is IInitializable initializable)
             {
                 initializable.Init();
@@ -190,7 +189,7 @@ namespace DependencyInjection.Runtime
 
         private IEnumerable<PropertyInfo> GetProperties(Type type)
         {
-            if (type == null)
+            if (type?.BaseType == null)
             {
                 return new List<PropertyInfo>();
             }
