@@ -1,29 +1,19 @@
 {
-    "name": "DependencyInjection.Tests.Editor",
+    "name": "Moq",
     "rootNamespace": "",
-    "references": [
-        "UnityEngine.TestRunner",
-        "UnityEditor.TestRunner",
-        "DependencyInjection",
-        "Moq"
-    ],
-    "includePlatforms": [
-        "Editor"
-    ],
+    "references": [],
+    "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": true,
     "overrideReferences": true,
     "precompiledReferences": [
-        "nunit.framework.dll",
         "Moq.dll",
         "Castle.Core.dll",
         "System.Runtime.CompilerServices.Unsafe.dll",
         "System.Threading.Tasks.Extensions.dll"
     ],
     "autoReferenced": false,
-    "defineConstraints": [
-        "UNITY_INCLUDE_TESTS"
-    ],
+    "defineConstraints": [],
     "versionDefines": [],
     "noEngineReferences": false
 }

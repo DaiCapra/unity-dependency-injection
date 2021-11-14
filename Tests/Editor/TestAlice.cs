@@ -2,9 +2,14 @@
 {
     public class TestAlice : ITestAlice
     {
+        public string Foo()
+        {
+            return string.Empty;
+        }
     }
 
     public interface ITestAlice
     {
+        string Foo();
     }
 }

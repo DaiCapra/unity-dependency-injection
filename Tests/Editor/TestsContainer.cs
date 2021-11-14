@@ -1,5 +1,7 @@
 using DependencyInjection.Runtime;
+using Moq;
 using NUnit.Framework;
+using UnityEngine;
 
 namespace DependencyInjection.Tests.Editor
 {
@@ -82,6 +84,25 @@ namespace DependencyInjection.Tests.Editor
             container.Register<TestAlice>();
             container.Register<TestBob>();
             container.Register<TestCharlie>();
+            container.Register<TestDave>();
+
+            Assert.True(container.Verify());
+        }
+
+        [Test]
+        public void TestMoq()
+        {
+            var alice = new Mock<ITestAlice>();
+            alice.Setup(t => t.Foo())
+                .Returns("foo");
+
+            var container = new Container();
+            container.Register(alice.Object);
+
+            var obj = container.Get<TestEric>();
+            Assert.NotNull(obj);
+            Assert.NotNull(obj.Alice);
+            Assert.AreEqual("foo", obj.Alice.Foo());
         }
     }
 }
