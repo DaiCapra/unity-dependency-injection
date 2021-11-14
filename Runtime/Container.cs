@@ -8,7 +8,6 @@ namespace DependencyInjection.Runtime
 {
     public class Container
     {
-        public bool AutoResolve { get; set; }
         private readonly BindingFlags _bindingFlags;
         private readonly Dictionary<Type, object> _map;
 
@@ -18,6 +17,8 @@ namespace DependencyInjection.Runtime
             _bindingFlags = BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public;
             _map = new Dictionary<Type, object>();
         }
+
+        public bool AutoResolve { get; set; }
 
 
         public T Get<T>() where T : class
@@ -29,6 +30,12 @@ namespace DependencyInjection.Runtime
             }
 
             return default;
+        }
+
+        public void InjectDependencies(object t)
+        {
+            InjectFields(t);
+            InjectProperties(t);
         }
 
 
@@ -67,6 +74,11 @@ namespace DependencyInjection.Runtime
             {
                 var type = kv.Key;
                 var instance = kv.Value;
+                if (type == null)
+                {
+                    continue;
+                }
+
                 if (instance == null)
                 {
                     Debug.LogWarning($"Instance null for type: {type.Name}!");
@@ -106,6 +118,18 @@ namespace DependencyInjection.Runtime
             return true;
         }
 
+        protected virtual object CreateInstance(Type type)
+        {
+            try
+            {
+                return Activator.CreateInstance(type);
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
         private bool AutoResolveType(Type type)
         {
             if (!_map.ContainsKey(type))
@@ -122,20 +146,13 @@ namespace DependencyInjection.Runtime
             return true;
         }
 
-        protected virtual object CreateInstance(Type type)
-        {
-            try
-            {
-                return Activator.CreateInstance(type);
-            }
-            catch
-            {
-                return null;
-            }
-        }
-
         private IEnumerable<FieldInfo> GetFields(Type type)
         {
+            if (type == null)
+            {
+                return new List<FieldInfo>();
+            }
+
             return type.GetFields(_bindingFlags).Concat(type.BaseType.GetFields(_bindingFlags))
                 .Concat(type.BaseType.GetFields(_bindingFlags))
                 .Where(t => t.GetCustomAttributes(typeof(InjectAttribute), true).Length > 0);
@@ -162,17 +179,22 @@ namespace DependencyInjection.Runtime
             }
 
             InjectDependencies(t);
-            return t;
-        }
+            
+            if (t is IInitializable initializable)
+            {
+                initializable.Init();
+            }
 
-        public void InjectDependencies(object t)
-        {
-            InjectFields(t);
-            InjectProperties(t);
+            return t;
         }
 
         private IEnumerable<PropertyInfo> GetProperties(Type type)
         {
+            if (type == null)
+            {
+                return new List<PropertyInfo>();
+            }
+
             return type.GetProperties(_bindingFlags)
                 .Concat(type.BaseType.GetProperties(_bindingFlags))
                 .Where(t => t.GetCustomAttributes(typeof(InjectAttribute), true).Length > 0);
