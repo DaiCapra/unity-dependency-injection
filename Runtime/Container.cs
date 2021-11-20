@@ -68,6 +68,11 @@ namespace DependencyInjection.Runtime
             RegisterInstance(typeof(T), instance);
         }
 
+        public object[] GetRegisteredInstances()
+        {
+            return _map.Values.ToArray();
+        }
+
         public bool Verify()
         {
             foreach (var kv in _map)
