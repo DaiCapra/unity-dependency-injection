@@ -1,9 +1,10 @@
 using DependencyInjection.Runtime;
+using DependencyInjection.Tests.Editor;
 using Moq;
 using NUnit.Framework;
 using UnityEngine;
 
-namespace DependencyInjection.Tests.Editor
+namespace DependencyInjection
 {
     public class TestsContainer
     {
@@ -25,9 +26,9 @@ namespace DependencyInjection.Tests.Editor
         public void TestInjection()
         {
             var container = new Container();
-            container.Register<TestAlice>();
-            container.Register<TestBob>();
-            container.Register<TestCharlie>();
+            container.RegisterSingleton<TestAlice>();
+            container.RegisterSingleton<TestBob>();
+            container.RegisterSingleton<TestCharlie>();
 
             var obj = container.Get<TestCharlie>();
 
@@ -46,7 +47,7 @@ namespace DependencyInjection.Tests.Editor
             {
                 AutoResolve = false
             };
-            
+
             // invalid cast, different namespaces
             container.Register<ILogger, Logger>();
             var obj = container.Get<Castle.Core.Logging.ILogger>();
@@ -57,10 +58,10 @@ namespace DependencyInjection.Tests.Editor
         public void TestInjectionNested()
         {
             var container = new Container();
-            container.Register<TestAlice>();
-            container.Register<TestBob>();
-            container.Register<TestCharlie>();
-            container.Register<TestDave>();
+            container.RegisterSingleton<TestAlice>();
+            container.RegisterSingleton<TestBob>();
+            container.RegisterSingleton<TestCharlie>();
+            container.RegisterSingleton<TestDave>();
 
             var obj = container.Get<TestDave>();
 
@@ -75,7 +76,7 @@ namespace DependencyInjection.Tests.Editor
         {
             var container = new Container();
             container.Register<ITestAlice, TestAlice>();
-            container.Register<TestEric>();
+            container.RegisterSingleton<TestEric>();
 
             var obj = container.Get<TestEric>();
 
@@ -87,7 +88,7 @@ namespace DependencyInjection.Tests.Editor
         public void TestRegister()
         {
             var container = new Container();
-            container.Register<TestAlice>();
+            container.RegisterSingleton<TestAlice>();
             TestAlice obj = container.Get<TestAlice>();
 
             Assert.NotNull(obj);
@@ -105,13 +106,37 @@ namespace DependencyInjection.Tests.Editor
         }
 
         [Test]
+        public void TestScope()
+        {
+            var container = new Container();
+            var a1 = container.Get<TestAlice>();
+            var a2 = container.Get<TestAlice>();
+            Assert.That(a1, Is.Not.EqualTo(a2));
+
+            container.RegisterSingleton<TestBob>();
+            var b1 = container.Get<TestBob>();
+            var b2 = container.Get<TestBob>();
+            Assert.That(b1, Is.EqualTo(b2));
+
+            container.Register<ITestEric, TestEric>();
+            var c1 = container.Get<ITestEric>();
+            var c2 = container.Get<ITestEric>();
+            Assert.That(c1, Is.Not.EqualTo(c2));
+
+            container.RegisterSingleton<ITestEric, TestEric>();
+            var d1 = container.Get<ITestEric>();
+            var d2 = container.Get<ITestEric>();
+            Assert.That(d1, Is.EqualTo(d2));
+        }
+
+        [Test]
         public void TestVerify()
         {
             var container = new Container();
-            container.Register<TestAlice>();
-            container.Register<TestBob>();
-            container.Register<TestCharlie>();
-            container.Register<TestDave>();
+            container.RegisterSingleton<TestAlice>();
+            container.RegisterSingleton<TestBob>();
+            container.RegisterSingleton<TestCharlie>();
+            container.RegisterSingleton<TestDave>();
 
             Assert.True(container.Verify());
         }
@@ -124,7 +149,7 @@ namespace DependencyInjection.Tests.Editor
                 .Returns("foo");
 
             var container = new Container();
-            container.Register(alice.Object);
+            container.RegisterObjectToInterface<ITestAlice, TestAlice>(alice.Object);
 
             var obj = container.Get<TestEric>();
             Assert.NotNull(obj);
