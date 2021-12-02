@@ -204,8 +204,7 @@ namespace DependencyInjection.Runtime
                 return default;
             }
 
-            InjectFields(t);
-            InjectProperties(t);
+            InjectDependencies(t);
 
             if (t is IInitializable initializable)
             {
@@ -213,6 +212,12 @@ namespace DependencyInjection.Runtime
             }
 
             return t;
+        }
+
+        public void InjectDependencies(object obj)
+        {
+            InjectFields(obj);
+            InjectProperties(obj);
         }
 
         private IEnumerable<PropertyInfo> GetProperties(Type type)
