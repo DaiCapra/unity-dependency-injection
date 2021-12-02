@@ -34,6 +34,10 @@ namespace DependencyInjection.Runtime
             return default;
         }
 
+        public object Make(Type type)
+        {
+            return GetInstance(type);
+        }
 
         public void RegisterSingleton(Type type)
         {
