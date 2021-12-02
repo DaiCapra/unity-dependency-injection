@@ -91,11 +91,11 @@ namespace DependencyInjection.Runtime
             _mapSingletons[type] = instance;
         }
 
-        public object[] GetRegisteredInstances()
+        public Dictionary<Type, object> GetSingletons()
         {
-            return _mapSingletons.Values.ToArray();
+            return _mapSingletons;
         }
-
+        
         public bool Verify()
         {
             foreach (var kv in _mapSingletons)
