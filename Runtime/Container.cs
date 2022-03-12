@@ -9,8 +9,10 @@ namespace DependencyInjection.Runtime
     public class Container
     {
         private readonly BindingFlags _bindingFlags;
-        private readonly Dictionary<Type, object> _mapSingletons;
         private readonly Dictionary<Type, Type> _mapInterfaces;
+        private readonly Dictionary<Type, object> _mapSingletons;
+
+        public bool AutoResolve { get; set; }
 
         public Container()
         {
@@ -19,8 +21,6 @@ namespace DependencyInjection.Runtime
             _mapSingletons = new Dictionary<Type, object>();
             _mapInterfaces = new Dictionary<Type, Type>();
         }
-
-        public bool AutoResolve { get; set; }
 
 
         public T Get<T>() where T : class
@@ -34,21 +34,20 @@ namespace DependencyInjection.Runtime
             return default;
         }
 
+        public Dictionary<Type, object> GetSingletons()
+        {
+            return _mapSingletons;
+        }
+
+        public void InjectDependencies(object obj)
+        {
+            InjectFields(obj);
+            InjectProperties(obj);
+        }
+
         public object Make(Type type)
         {
             return GetInstance(type);
-        }
-
-        public void RegisterSingleton(Type type)
-        {
-            var instance = CreateInstance(type);
-            _mapSingletons[type] = instance;
-        }
-
-
-        public void RegisterSingleton<T>()
-        {
-            RegisterSingleton(typeof(T));
         }
 
         public void Register<I, T>() where T : class
@@ -62,6 +61,44 @@ namespace DependencyInjection.Runtime
 
             var type = typeof(T);
             _mapInterfaces[typeInterface] = type;
+        }
+
+        public void RegisterObject<T>(T instance) where T : class
+        {
+            var type = typeof(T);
+            _mapSingletons[type] = instance;
+        }
+
+        public void RegisterObjectToInterface<I, T>(I instance) where T : class
+        {
+            Register<I, T>();
+            var type = typeof(T);
+            _mapSingletons[type] = instance;
+        }
+
+        public void RegisterObjectToInterface<I>(I instance)
+        {
+            var type = typeof(I);
+            if (!type.IsInterface)
+            {
+                Debug.LogWarning($"Generic type I is not an interface!");
+                return;
+            }
+
+            _mapInterfaces[type] = type;
+            _mapSingletons[type] = instance;
+        }
+
+        public void RegisterSingleton(Type type)
+        {
+            var instance = CreateInstance(type);
+            _mapSingletons[type] = instance;
+        }
+
+
+        public void RegisterSingleton<T>()
+        {
+            RegisterSingleton(typeof(T));
         }
 
         public void RegisterSingleton<I, T>() where T : class
@@ -78,24 +115,6 @@ namespace DependencyInjection.Runtime
             RegisterSingleton(type);
         }
 
-        public void RegisterObject<T>(T instance) where T : class
-        {
-            var type = typeof(T);
-            _mapSingletons[type] = instance;
-        }
-
-        public void RegisterObjectToInterface<I, T>(I instance) where T : class
-        {
-            Register<I, T>();
-            var type = typeof(T);
-            _mapSingletons[type] = instance;
-        }
-
-        public Dictionary<Type, object> GetSingletons()
-        {
-            return _mapSingletons;
-        }
-        
         public bool Verify()
         {
             foreach (var kv in _mapSingletons)
@@ -216,12 +235,6 @@ namespace DependencyInjection.Runtime
             }
 
             return t;
-        }
-
-        public void InjectDependencies(object obj)
-        {
-            InjectFields(obj);
-            InjectProperties(obj);
         }
 
         private IEnumerable<PropertyInfo> GetProperties(Type type)
