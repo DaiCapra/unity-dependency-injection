@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using Moq;
 using UnityEngine;
 
 namespace DependencyInjection.Runtime
@@ -113,6 +114,13 @@ namespace DependencyInjection.Runtime
             var type = typeof(T);
             _mapInterfaces[typeInterface] = type;
             RegisterSingleton(type);
+        }
+
+        public Mock<T> Mock<T>() where T : class
+        {
+            var mock = new Mock<T>();
+            RegisterObjectToInterface(mock.Object);
+            return mock;
         }
 
         public bool Verify()
