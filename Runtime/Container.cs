@@ -94,6 +94,7 @@ namespace DependencyInjection.Runtime
         {
             var instance = CreateInstance(type);
             _mapSingletons[type] = instance;
+            InjectDependencies(instance);
         }
 
 
