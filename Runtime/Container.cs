@@ -97,6 +97,17 @@ namespace DependencyInjection.Runtime
             InjectDependencies(instance);
         }
 
+        public void RegisterSingleton(object obj)
+        {
+            if (obj == null)
+            {
+                return;
+            }
+
+            _mapSingletons[obj.GetType()] = obj;
+            InjectDependencies(obj);
+        }
+
 
         public void RegisterSingleton<T>()
         {
