@@ -4,157 +4,154 @@ using Moq;
 using NUnit.Framework;
 using UnityEngine;
 
-namespace DependencyInjection
+public class TestsContainer
 {
-    public class TestsContainer
+    [Test]
+    public void TestAutoResolve()
     {
-        [Test]
-        public void TestAutoResolve()
+        var container = new Container()
         {
-            var container = new Container()
-            {
-                AutoResolve = true
-            };
+            AutoResolve = true
+        };
 
-            var obj = container.Get<TestCharlie>();
-            Assert.NotNull(obj);
-            Assert.NotNull(obj.Alice);
-            Assert.NotNull(obj.Bob);
-        }
+        var obj = container.Get<TestCharlie>();
+        Assert.NotNull(obj);
+        Assert.NotNull(obj.Alice);
+        Assert.NotNull(obj.Bob);
+    }
 
-        [Test]
-        public void TestInjection()
+    [Test]
+    public void TestInjection()
+    {
+        var container = new Container();
+        container.RegisterSingleton<TestAlice>();
+        container.RegisterSingleton<TestBob>();
+        container.RegisterSingleton<TestCharlie>();
+
+        var obj = container.Get<TestCharlie>();
+
+        Assert.NotNull(obj);
+        Assert.NotNull(obj.Alice);
+        Assert.NotNull(obj.Bob);
+
+        Assert.AreEqual(typeof(TestAlice), obj.Alice.GetType());
+        Assert.AreEqual(typeof(TestBob), obj.Bob.GetType());
+    }
+
+    [Test]
+    public void TestInvalid()
+    {
+        var container = new Container
         {
-            var container = new Container();
-            container.RegisterSingleton<TestAlice>();
-            container.RegisterSingleton<TestBob>();
-            container.RegisterSingleton<TestCharlie>();
+            AutoResolve = false
+        };
 
-            var obj = container.Get<TestCharlie>();
+        // invalid cast, different namespaces
+        container.Register<ILogger, Logger>();
+        var obj = container.Get<Castle.Core.Logging.ILogger>();
+        Assert.Null(obj);
+    }
 
-            Assert.NotNull(obj);
-            Assert.NotNull(obj.Alice);
-            Assert.NotNull(obj.Bob);
+    [Test]
+    public void TestInjectionNested()
+    {
+        var container = new Container();
+        container.RegisterSingleton<TestAlice>();
+        container.RegisterSingleton<TestBob>();
+        container.RegisterSingleton<TestCharlie>();
+        container.RegisterSingleton<TestDave>();
 
-            Assert.AreEqual(typeof(TestAlice), obj.Alice.GetType());
-            Assert.AreEqual(typeof(TestBob), obj.Bob.GetType());
-        }
+        var obj = container.Get<TestDave>();
 
-        [Test]
-        public void TestInvalid()
-        {
-            var container = new Container
-            {
-                AutoResolve = false
-            };
+        Assert.NotNull(obj);
+        Assert.NotNull(obj.Charlie);
+        Assert.NotNull(obj.Charlie.Alice);
+        Assert.NotNull(obj.Charlie.Bob);
+    }
 
-            // invalid cast, different namespaces
-            container.Register<ILogger, Logger>();
-            var obj = container.Get<Castle.Core.Logging.ILogger>();
-            Assert.Null(obj);
-        }
+    [Test]
+    public void TestInjectionInterface()
+    {
+        var container = new Container();
+        container.Register<ITestAlice, TestAlice>();
+        container.RegisterSingleton<TestEric>();
 
-        [Test]
-        public void TestInjectionNested()
-        {
-            var container = new Container();
-            container.RegisterSingleton<TestAlice>();
-            container.RegisterSingleton<TestBob>();
-            container.RegisterSingleton<TestCharlie>();
-            container.RegisterSingleton<TestDave>();
+        var obj = container.Get<TestEric>();
 
-            var obj = container.Get<TestDave>();
+        Assert.NotNull(obj);
+        Assert.NotNull(obj.Alice);
+    }
 
-            Assert.NotNull(obj);
-            Assert.NotNull(obj.Charlie);
-            Assert.NotNull(obj.Charlie.Alice);
-            Assert.NotNull(obj.Charlie.Bob);
-        }
+    [Test]
+    public void TestRegister()
+    {
+        var container = new Container();
+        container.RegisterSingleton<TestAlice>();
+        TestAlice obj = container.Get<TestAlice>();
 
-        [Test]
-        public void TestInjectionInterface()
-        {
-            var container = new Container();
-            container.Register<ITestAlice, TestAlice>();
-            container.RegisterSingleton<TestEric>();
+        Assert.NotNull(obj);
+        Assert.AreEqual(typeof(TestAlice), obj.GetType());
+    }
 
-            var obj = container.Get<TestEric>();
+    [Test]
+    public void TestRegisterInterface()
+    {
+        var container = new Container();
+        container.Register<ITestAlice, TestAlice>();
+        ITestAlice obj = container.Get<ITestAlice>();
 
-            Assert.NotNull(obj);
-            Assert.NotNull(obj.Alice);
-        }
+        Assert.NotNull(obj);
+    }
 
-        [Test]
-        public void TestRegister()
-        {
-            var container = new Container();
-            container.RegisterSingleton<TestAlice>();
-            TestAlice obj = container.Get<TestAlice>();
+    [Test]
+    public void TestScope()
+    {
+        var container = new Container();
+        var a1 = container.Get<TestAlice>();
+        var a2 = container.Get<TestAlice>();
+        Assert.That(a1, Is.Not.EqualTo(a2));
 
-            Assert.NotNull(obj);
-            Assert.AreEqual(typeof(TestAlice), obj.GetType());
-        }
+        container.RegisterSingleton<TestBob>();
+        var b1 = container.Get<TestBob>();
+        var b2 = container.Get<TestBob>();
+        Assert.That(b1, Is.EqualTo(b2));
 
-        [Test]
-        public void TestRegisterInterface()
-        {
-            var container = new Container();
-            container.Register<ITestAlice, TestAlice>();
-            ITestAlice obj = container.Get<ITestAlice>();
+        container.Register<ITestEric, TestEric>();
+        var c1 = container.Get<ITestEric>();
+        var c2 = container.Get<ITestEric>();
+        Assert.That(c1, Is.Not.EqualTo(c2));
 
-            Assert.NotNull(obj);
-        }
+        container.RegisterSingleton<ITestEric, TestEric>();
+        var d1 = container.Get<ITestEric>();
+        var d2 = container.Get<ITestEric>();
+        Assert.That(d1, Is.EqualTo(d2));
+    }
 
-        [Test]
-        public void TestScope()
-        {
-            var container = new Container();
-            var a1 = container.Get<TestAlice>();
-            var a2 = container.Get<TestAlice>();
-            Assert.That(a1, Is.Not.EqualTo(a2));
+    [Test]
+    public void TestVerify()
+    {
+        var container = new Container();
+        container.RegisterSingleton<TestAlice>();
+        container.RegisterSingleton<TestBob>();
+        container.RegisterSingleton<TestCharlie>();
+        container.RegisterSingleton<TestDave>();
 
-            container.RegisterSingleton<TestBob>();
-            var b1 = container.Get<TestBob>();
-            var b2 = container.Get<TestBob>();
-            Assert.That(b1, Is.EqualTo(b2));
+        Assert.True(container.Verify());
+    }
 
-            container.Register<ITestEric, TestEric>();
-            var c1 = container.Get<ITestEric>();
-            var c2 = container.Get<ITestEric>();
-            Assert.That(c1, Is.Not.EqualTo(c2));
+    [Test]
+    public void TestMoq()
+    {
+        var alice = new Mock<ITestAlice>();
+        alice.Setup(t => t.Foo())
+            .Returns("foo");
 
-            container.RegisterSingleton<ITestEric, TestEric>();
-            var d1 = container.Get<ITestEric>();
-            var d2 = container.Get<ITestEric>();
-            Assert.That(d1, Is.EqualTo(d2));
-        }
+        var container = new Container();
+        container.RegisterObjectToInterface<ITestAlice, TestAlice>(alice.Object);
 
-        [Test]
-        public void TestVerify()
-        {
-            var container = new Container();
-            container.RegisterSingleton<TestAlice>();
-            container.RegisterSingleton<TestBob>();
-            container.RegisterSingleton<TestCharlie>();
-            container.RegisterSingleton<TestDave>();
-
-            Assert.True(container.Verify());
-        }
-
-        [Test]
-        public void TestMoq()
-        {
-            var alice = new Mock<ITestAlice>();
-            alice.Setup(t => t.Foo())
-                .Returns("foo");
-
-            var container = new Container();
-            container.RegisterObjectToInterface<ITestAlice, TestAlice>(alice.Object);
-
-            var obj = container.Get<TestEric>();
-            Assert.NotNull(obj);
-            Assert.NotNull(obj.Alice);
-            Assert.AreEqual("foo", obj.Alice.Foo());
-        }
+        var obj = container.Get<TestEric>();
+        Assert.NotNull(obj);
+        Assert.NotNull(obj.Alice);
+        Assert.AreEqual("foo", obj.Alice.Foo());
     }
 }

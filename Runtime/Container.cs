@@ -12,11 +12,16 @@ namespace DependencyInjection.Runtime
         private readonly BindingFlags _bindingFlags;
         private readonly Dictionary<Type, Type> _mapInterfaces;
         private readonly Dictionary<Type, object> _mapSingletons;
+        private readonly Dictionary<Type, IEnumerable<FieldInfo>> _fields;
+        private readonly Dictionary<Type, IEnumerable<PropertyInfo>> _properties;
 
         public bool AutoResolve { get; set; }
 
         public Container()
         {
+            _fields = new Dictionary<Type, IEnumerable<FieldInfo>>();
+            _properties = new Dictionary<Type, IEnumerable<PropertyInfo>>();
+
             AutoResolve = true;
             _bindingFlags = BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public;
             _mapSingletons = new Dictionary<Type, object>();
@@ -213,9 +218,14 @@ namespace DependencyInjection.Runtime
                 return new List<FieldInfo>();
             }
 
-            return type.GetFields(_bindingFlags).Concat(type.BaseType.GetFields(_bindingFlags))
-                .Concat(type.BaseType.GetFields(_bindingFlags))
-                .Where(t => t.GetCustomAttributes(typeof(InjectAttribute), true).Length > 0);
+            if (!_fields.ContainsKey(type))
+            {
+                _fields[type] = type.GetFields(_bindingFlags).Concat(type.BaseType.GetFields(_bindingFlags))
+                    .Concat(type.BaseType.GetFields(_bindingFlags))
+                    .Where(t => t.GetCustomAttributes(typeof(InjectAttribute), true).Length > 0);
+            }
+
+            return _fields[type];
         }
 
         private object GetInstance(Type type)
@@ -264,9 +274,14 @@ namespace DependencyInjection.Runtime
                 return new List<PropertyInfo>();
             }
 
-            return type.GetProperties(_bindingFlags)
-                .Concat(type.BaseType.GetProperties(_bindingFlags))
-                .Where(t => t.GetCustomAttributes(typeof(InjectAttribute), true).Length > 0);
+            if (!_properties.ContainsKey(type))
+            {
+                _properties[type] = type.GetProperties(_bindingFlags)
+                    .Concat(type.BaseType.GetProperties(_bindingFlags))
+                    .Where(t => t.GetCustomAttributes(typeof(InjectAttribute), true).Length > 0);
+            }
+
+            return _properties[type];
         }
 
         private void InjectFields(object obj)
